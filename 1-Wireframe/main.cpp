@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
     }
 
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
-    image.write_tga_file("../../output.tga");
+    image.write_tga_file("../../Wireframe.tga");
     delete model;
     return 0;
 }
