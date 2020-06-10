@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
 
 
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image    
-	image.write_tga_file("../../triangles.tga");
+	image.write_tga_file("../../Output/triangles.tga");
     return 0;
 }
 
