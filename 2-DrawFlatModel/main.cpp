@@ -3,6 +3,7 @@
 #include "tgaimage.h"
 #include "geometry.h"
 #include "model.h"
+#include <algorithm>
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor red = TGAColor(255, 0, 0, 255);
@@ -91,22 +92,57 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
 //}
 
 // 暴力填充三角形 - 优化2
-void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
-	if (t0.y == t1.y && t0.y == t2.y) return; // i dont care about degenerate triangles
-	if (t0.y > t1.y) std::swap(t0, t1);
-	if (t0.y > t2.y) std::swap(t0, t2);
-	if (t1.y > t2.y) std::swap(t1, t2);
-	int total_height = t2.y - t0.y;
-	for (int i = 0; i < total_height; i++) {
-		bool second_half = i > t1.y - t0.y || t1.y == t0.y;
-		int segment_height = second_half ? t2.y - t1.y : t1.y - t0.y;
-		float alpha = (float)i / total_height;
-		float beta = (float)(i - (second_half ? t1.y - t0.y : 0)) / segment_height; // be careful: with above conditions no division by zero here
-		Vec2i A = t0 + (t2 - t0)*alpha;
-		Vec2i B = second_half ? t1 + (t2 - t1)*beta : t0 + (t1 - t0)*beta;
-		if (A.x > B.x) std::swap(A, B);
-		for (int j = A.x; j <= B.x; j++) {
-			image.set(j, t0.y + i, color); // attention, due to int casts t0.y+i != A.y
+//void triangle(Vec2i t0, Vec2i t1, Vec2i t2, TGAImage &image, TGAColor color) {
+//	if (t0.y == t1.y && t0.y == t2.y) return; // i dont care about degenerate triangles
+//	if (t0.y > t1.y) std::swap(t0, t1);
+//	if (t0.y > t2.y) std::swap(t0, t2);
+//	if (t1.y > t2.y) std::swap(t1, t2);
+//	int total_height = t2.y - t0.y;
+//	for (int i = 0; i < total_height; i++) {
+//		bool second_half = i > t1.y - t0.y || t1.y == t0.y;
+//		int segment_height = second_half ? t2.y - t1.y : t1.y - t0.y;
+//		float alpha = (float)i / total_height;
+//		float beta = (float)(i - (second_half ? t1.y - t0.y : 0)) / segment_height; // be careful: with above conditions no division by zero here
+//		Vec2i A = t0 + (t2 - t0)*alpha;
+//		Vec2i B = second_half ? t1 + (t2 - t1)*beta : t0 + (t1 - t0)*beta;
+//		if (A.x > B.x) std::swap(A, B);
+//		for (int j = A.x; j <= B.x; j++) {
+//			image.set(j, t0.y + i, color); // attention, due to int casts t0.y+i != A.y
+//		}
+//	}
+//}
+
+// 重心法1
+Vec3f barycentric(Vec2i A, Vec2i B, Vec2i C, Vec2i P) {
+	Vec3f s[2];
+	for (int i = 2; i--; ) {
+		s[i][0] = C[i] - A[i];
+		s[i][1] = B[i] - A[i];
+		s[i][2] = A[i] - P[i];
+	}
+
+	Vec3f u = s[0] ^ s[1];
+	if (std::abs(u[2]) > 0.01) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
+		return Vec3f(1.f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
+	return Vec3f(-1, 1, 1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
+}
+
+void triangle(Vec2i *pts, TGAImage &image, TGAColor color) {
+	Vec2i bboxmin(image.get_width() - 1, image.get_height() - 1);
+	Vec2i bboxmax(0, 0);
+	Vec2i clamp(image.get_width() - 1, image.get_height() - 1);
+	for (int i = 0; i < 3; i++) {
+		for (int j = 0; j < 2; j++) {
+			bboxmin[j] = std::max(0, std::min(bboxmin[j], pts[i][j]));
+			bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
+		}
+	}
+	Vec2i P;
+	for (P.x = bboxmin.x; P.x <= bboxmax.x; P.x++) {
+		for (P.y = bboxmin.y; P.y <= bboxmax.y; P.y++) {
+			Vec3f bc_screen = barycentric(pts[0], pts[1], pts[2], P);
+			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0) continue;
+			image.set(P.x, P.y, color);
 		}
 	}
 }
@@ -134,13 +170,14 @@ int main(int argc, char** argv) {
 		n.normalize();
 		float intensity = n * light_dir;
 		if (intensity > 0) {
-			triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
+			//triangle(screen_coords[0], screen_coords[1], screen_coords[2], image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
+			triangle(screen_coords, image, TGAColor(intensity * 255, intensity * 255, intensity * 255, 255));
 		}
 	}
 
 	image.flip_vertically(); // i want to have the origin at the left bottom corner of the image
 	
-	image.write_tga_file("../../Output/trianglesBarycentric.tga");
+	image.write_tga_file("../../Output/ModelBarycentric.tga");
 	delete model;
 	return 0;
 }
