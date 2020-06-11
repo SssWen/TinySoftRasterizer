@@ -114,15 +114,28 @@ void line(Vec2i p0, Vec2i p1, TGAImage &image, TGAColor color) {
 
 
 // 重心法1
+// https://zhuanlan.zhihu.com/p/65495373
+// https://github.com/ssloy/tinyrenderer/wiki/Lesson-2-Triangle-rasterization-and-back-face-culling
 Vec3f barycentric(Vec2i A, Vec2i B, Vec2i C, Vec2i P) {
 	Vec3f s[2];
-	for (int i = 2; i--; ) {
-		s[i][0] = C[i] - A[i];
-		s[i][1] = B[i] - A[i];
-		s[i][2] = A[i] - P[i];
-	}	
+	//for (int i = 2; i--; ) {
+	//	s[i][0] = C[i] - A[i];
+	//	s[i][1] = B[i] - A[i];
+	//	s[i][2] = A[i] - P[i];
+	//}	
+	s[0][0] = C.x - A.x;
+	s[0][1] = B.x - A.x;
+	s[0][2] = A.x - P.x;
 
-	Vec3f u = s[0] ^ s[1];
+	s[1][0] = C.y - A.y;
+	s[1][1] = B.y - A.y;
+	s[1][2] = A.y - P.y;
+
+	//s[0] = { C.x - A.x ,B.x - A.x ,A.x - P.x };
+	//s[1] = { C.y - A.y ,B.y - A.y ,A.y - P.y };
+
+
+	Vec3f u = cross(s[0],s[1]);
 	if (std::abs(u[2]) > 0.01) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
 		return Vec3f(1.f - (u.x + u.y) / u.z, u.x / u.z, u.y / u.z);
 	return Vec3f(-1, 1, 1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
