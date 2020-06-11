@@ -60,7 +60,7 @@ Vec3f world2screen(Vec3f v) {
 
 int main(int argc, char** argv) {
     
-	model = new Model("obj/african_head/african_head.obj");
+	model = new Model("../../obj/african_head/african_head.obj");
     float *zbuffer = new float[width*height];
     for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
 
