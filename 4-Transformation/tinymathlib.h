@@ -60,7 +60,10 @@ public:
 		);
 	}
 public:
-	T m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44;
+	T	m11, m12, m13, m14, 
+		m21, m22, m23, m24, 
+		m31, m32, m33, m34, 
+		m41, m42, m43, m44;
 };
 
 template<typename T>
@@ -81,7 +84,10 @@ public:
 	}
 	Matrix3x3<T> operator*(T scalar)
 	{
-		return Matrix3x3(m11 * scalar, m12 * scalar, m13 * scalar, m21 * scalar, m22 * scalar, m23 * scalar, m31 * scalar, m32 * scalar, m33 * scalar);
+		return Matrix3x3(
+			m11 * scalar, m12 * scalar, m13 * scalar,
+			m21 * scalar, m22 * scalar, m23 * scalar,
+			m31 * scalar, m32 * scalar, m33 * scalar);
 	}
 	Matrix3x3<T> operator*(Matrix3x3<T> matrix)
 	{
@@ -186,8 +192,7 @@ public:
 			);
 	}
 	Matrix3x3<T> classicalAdjoint()
-	{
-		// This method is based on the classical adjoint
+	{		
 		Matrix3x3<float> temp = adjoint();
 		return temp.transpose();
 	}
@@ -239,7 +244,39 @@ public:
 public:
 	T m11, m12, m21, m22;
 };
+template<typename T>
+class Matrix1x4
+{
+public:
+	Matrix1x4() : m11(0), m12(0), m13(0), m14(0)
+	{
+	}
+	Matrix1x4(T _m11, T _m12, T _m21, T _m22)
+		: m11(_m11), m12(_m12), m13(_m21), m14(_m22)
+	{
+	}
+	//Matrix1x4<T> transpose()
+	//{
+	//	return Matrix2x2(m11, m21, m12, m22);
+	//}
+	Matrix1x4<T> operator*(T scalar)
+	{
+		return Matrix2x2(m11 * scalar, m12 * scalar, m13 * scalar, m14 * scalar);
+	}
+	Matrix1x4<T> operator*(Matrix4x4<T> matrix)
+	{
+		return Matrix1x4(
+			(m11 * matrix.m11 + m12 * matrix.m21 + m13 * matrix.m31 + m14 * matrix.m41),
+			(m11 * matrix.m12 + m12 * matrix.m22 + m13 * matrix.m32 + m14 * matrix.m42),
+			(m11 * matrix.m13 + m12 * matrix.m23 + m13 * matrix.m33 + m14 * matrix.m43),
+			(m11 * matrix.m14 + m12 * matrix.m24 + m13 * matrix.m34 + m14 * matrix.m44),
+			
+		);
+	}
 
+public:
+	T m11, m12, m13, m14;
+};
 template<typename T>
 class Vector2
 {
@@ -564,19 +601,28 @@ Vector2<T> CreateZeroVector2D()
 template<typename T>
 Matrix2x2<T> CreateIdentityMatrix2x2()
 {
-	return Matrix2x2<T>(1.0f, 0.0f, 0.0f, 1.0f);
+	return Matrix2x2<T>(
+		1.0f, 0.0f,
+		0.0f, 1.0f);
 }
 
 template<typename T>
 Matrix3x3<T> CreateIdentityMatrix3x3()
 {
-	return Matrix3x3<T>(1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	return Matrix3x3<T>(
+		1.0f, 0.0f, 0.0f, 
+		0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 1.0f);
 }
 
 template<typename T>
 Matrix4x4<T> CreateIdentityMatrix4x4()
 {
-	return Matrix4x4<T>(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	return Matrix4x4<T>(
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f, 
+		0.0f, 0.0f, 1.0f, 0.0f, 
+		0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 // Consider counterclockwise rotation positive and clockwise rotation negative.
@@ -618,7 +664,11 @@ Matrix3x3<T> CreateRotationMatrix3x3(float angle, Vector3<T> unitAxis)
 template<typename T>
 Matrix4x4<T> CreateRotationMatrix4x4AxisX(float angle)
 {
-	return Matrix4x4<T>(1, 0, 0, 0, 0, cos(angle), sin(angle), 0, 0, -sin(angle), cos(angle), 0, 0, 0, 0, 1);
+	return Matrix4x4<T>(
+		1, 0, 0, 0, 0, 
+		cos(angle), sin(angle), 0, 0,
+		-sin(angle), cos(angle),   
+		0, 0, 0, 0, 1);
 }
 
 template<typename T>
@@ -693,7 +743,11 @@ Matrix3x3<T> CreateScaleMatrix3x3(float scale, Vector3<T> direction)
 template<typename T>
 Matrix4x4<T> CreateTranslationMatrix4x4(float dx, float dy, float dz)
 {
-	return Matrix4x4<T>(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, dx, dy, dz, 1);
+	return Matrix4x4<T>(
+		1, 0, 0, 0,
+		0, 1, 0, 0, 
+		0, 0, 1, 0, 
+		dx, dy, dz, 1);
 }
 
 template<typename T>

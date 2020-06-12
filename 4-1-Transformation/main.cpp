@@ -10,74 +10,99 @@
 
 const TGAColor white = TGAColor(255, 255, 255, 255);
 const TGAColor red   = TGAColor(255, 0,   0,   255);
+const TGAColor yellow   = TGAColor(255, 255,   0,   255);
+const TGAColor blue   = TGAColor(255, 0, 255,   255);
 Model *model = NULL;
-const int width  = 800;
-const int height = 800;
+const int width  = 100;
+const int height = 100;
+const int depth = 255;
 
-// 重心坐标的特别版本,正常可以通过面积法 求出u.xyz,这里是特殊处理
-Vec3f barycentric(Vec3f A, Vec3f B, Vec3f C, Vec3f P) {
-    Vec3f s[2];
-    //for (int i=2; i--; ) {
-    //    s[i][0] = C[i]-A[i];
-    //    s[i][1] = B[i]-A[i];
-    //    s[i][2] = A[i]-P[i];
-    //}
-	s[0] = { C.x - A.x ,B.x - A.x ,A.x - P.x };
-	s[1] = { C.y - A.y ,B.y - A.y ,A.y - P.y };
-    Vec3f u = cross(s[0], s[1]);
-    if (std::abs(u[2])>1e-2) // dont forget that u[2] is integer. If it is zero then triangle ABC is degenerate
-        return Vec3f(1.f-(u.x+u.y)/u.z, u.y/u.z, u.x/u.z);
-    return Vec3f(-1,1,1); // in this case generate negative coordinates, it will be thrown away by the rasterizator
+void line(Vec3f p0, Vec3f p1, TGAImage &image, TGAColor color) {
+	bool steep = false;
+	if (std::abs(p0.x - p1.x) < std::abs(p0.y - p1.y)) {
+		std::swap(p0.x, p0.y);
+		std::swap(p1.x, p1.y);
+		steep = true;
+	}
+	if (p0.x > p1.x) {
+		std::swap(p0, p1);
+	}
+
+	for (int x = p0.x; x <= p1.x; x++) {
+		float t = (x - p0.x) / (float)(p1.x - p0.x);
+		int y = p0.y*(1. - t) + p1.y*t + .5;
+		if (steep) {
+			image.set(y, x, color);
+		}
+		else {
+			image.set(x, y, color);
+		}
+	}
 }
 
-// https://zhuanlan.zhihu.com/p/65495373
-// p.z = A.x*(u.x/u.z) + B.y*(u.y/u.z) + C.z*(1-(u.x+u.z)/u.z);
-void triangle(Vec3f *pts, float *zbuffer, TGAImage &image, TGAColor color) {
-    Vec2f bboxmin( std::numeric_limits<float>::max(),  std::numeric_limits<float>::max());
-    Vec2f bboxmax(-std::numeric_limits<float>::max(), -std::numeric_limits<float>::max());
-    Vec2f clamp(image.get_width()-1, image.get_height()-1);
-    for (int i=0; i<3; i++) {
-        for (int j=0; j<2; j++) {
-            bboxmin[j] = std::max(0.f,      std::min(bboxmin[j], pts[i][j]));
-            bboxmax[j] = std::min(clamp[j], std::max(bboxmax[j], pts[i][j]));
-	
-        }
-    }
-    Vec3f P;
-    for (P.x=bboxmin.x; P.x<=bboxmax.x; P.x++) {
-        for (P.y=bboxmin.y; P.y<=bboxmax.y; P.y++) {
-            Vec3f bc_screen  = barycentric(pts[0], pts[1], pts[2], P);
-            if (bc_screen.x<0 || bc_screen.y<0 || bc_screen.z<0) continue;
-            P.z = 0;
-            for (int i=0; i<3; i++) P.z += pts[i][2]*bc_screen[i];
-            if (zbuffer[int(P.x+P.y*width)]<P.z) {
-                zbuffer[int(P.x+P.y*width)] = P.z;
-                image.set(P.x, P.y, color);
-            }
-        }
-    }
+
+
+
+Matrix4x4<float> translation(Vec3f v)
+{
+	return CreateTranslationMatrix4x4<float>(v.x, v.y, v.z);
 }
 
-Vec3f world2screen(Vec3f v) {
-    return Vec3f(int((v.x+1.)*width/2.+.5), int((v.y+1.)*height/2.+.5), v.z);
+// viewport 
+Matrix4x4<float> viewport(int x,int y,int w, int h)
+{
+	Matrix4x4<float> m = CreateIdentityMatrix4x4<float>();
+	m.m41 = x + w / 2.0f;
+	m.m42 = y + h / 2.0f;
+	m.m43 = depth / 2.0f;
+
+	m.m11 = w / 2.0f;
+	m.m22 = h / 2.0f;
+	m.m33 = depth / 2.0f;
+	return m;
 }
 
 int main(int argc, char** argv) {
     
-	model = new Model("../../obj/african_head/african_head.obj");
-    float *zbuffer = new float[width*height];
-    for (int i=width*height; i--; zbuffer[i] = -std::numeric_limits<float>::max());
-
+	model = new Model("../../obj/african_head.obj");
+   
     TGAImage image(width, height, TGAImage::RGB);
-    for (int i=0; i<model->nfaces(); i++) {
-        std::vector<int> face = model->face(i);
-        Vec3f pts[3];
-        for (int i=0; i<3; i++) pts[i] = world2screen(model->vert(face[i]));
-        triangle(pts, zbuffer, image, TGAColor(rand()%255, rand()%255, rand()%255, 255));
-    }
+    
+	// 绘制坐标轴
+	
+	Matrix VP = viewport(0, 0, width, height);
+	{ 
+		// 第一象限
+		Matrix1x4<float> rowX(1, 0, 0, 1);
+		rowX = rowX * VP;
+		Matrix1x4<float> rowO(0, 0, 0, 1);
+		rowO = rowO * VP;
+		Matrix1x4<float> rowY(0, 1, 0, 1);
+		rowY = rowY * VP;
+		Vec3f x(rowX.m11, rowX.m12, rowX.m13);
+		Vec3f o(rowO.m11, rowO.m12, rowO.m13);
+		Vec3f y(rowY.m11, rowY.m12, rowY.m13);
+
+		line(o, x, image, red);
+		line(o, y, image, white);
+
+		// 第三象限 
+		Matrix1x4<float> NegRowX(-1, 0, 0, 1);
+		NegRowX = NegRowX * VP;
+		
+		Matrix1x4<float> NegRowY(0, -1, 0, 1);
+		NegRowY = NegRowY * VP;
+		Vec3f x1(NegRowX.m11, NegRowX.m12, NegRowX.m13);
+		
+		Vec3f y1(NegRowY.m11, NegRowY.m12, NegRowY.m13);
+		
+		line(o, x1, image, yellow);
+		line(o, y1, image, blue);
+	}
+
 
     image.flip_vertically(); // i want to have the origin at the left bottom corner of the image    
-	image.write_tga_file("../../Output/Transfromation.tga");
+	image.write_tga_file("../../Output/TransfromationAxis.tga");
     delete model;
     return 0;
 }

@@ -64,6 +64,39 @@ public:
 };
 
 template<typename T>
+class Matrix1x4
+{
+public:
+	Matrix1x4() : m11(0), m12(0), m13(0), m14(0)
+	{
+	}
+	Matrix1x4(T _m11, T _m12, T _m21, T _m22)
+		: m11(_m11), m12(_m12), m13(_m21), m14(_m22)
+	{
+	}
+	//Matrix1x4<T> transpose()
+	//{
+	//	return Matrix2x2(m11, m21, m12, m22);
+	//}
+	Matrix1x4<T> operator*(T scalar)
+	{
+		return Matrix2x2(m11 * scalar, m12 * scalar, m13 * scalar, m14 * scalar);
+	}
+	Matrix1x4<T> operator*(Matrix4x4<T> matrix)
+	{
+		return Matrix1x4(
+			(m11 * matrix.m11 + m12 * matrix.m21 + m13 * matrix.m31 + m14 * matrix.m41),
+			(m11 * matrix.m12 + m12 * matrix.m22 + m13 * matrix.m32 + m14 * matrix.m42),
+			(m11 * matrix.m13 + m12 * matrix.m23 + m13 * matrix.m33 + m14 * matrix.m43),
+			(m11 * matrix.m14 + m12 * matrix.m24 + m13 * matrix.m34 + m14 * matrix.m44)
+
+			);
+	}
+
+public:
+	T m11, m12, m13, m14;
+};
+template<typename T>
 class Matrix3x3
 {
 public:
