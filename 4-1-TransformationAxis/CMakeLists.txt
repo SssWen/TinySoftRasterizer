@@ -1,7 +1,7 @@
-project(4-1-Transformation VERSION 1.0.0)
+project(4-1-TransformationAxis VERSION 1.0.0)
 
 
-add_executable(4-1-Transformation
+add_executable(4-1-TransformationAxis
 	main.cpp    
     model.h
     model.cpp
