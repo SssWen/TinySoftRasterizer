@@ -14,6 +14,11 @@
 template<typename T>
 class Matrix2x2;
 
+template<typename T>
+class Vector4;
+template<typename T>
+class Vector3;
+
 constexpr auto PI = 3.141592f;
 
 template<typename T>
@@ -69,6 +74,20 @@ class Matrix1x4
 public:
 	Matrix1x4() : m11(0), m12(0), m13(0), m14(0)
 	{
+	}
+	Matrix1x4(Vector3<float> v)
+	{
+		m11 = v.x;
+		m12 = v.y;
+		m13 = v.z;
+		m14 = 1.0;
+	}
+	Matrix1x4(Vector4<float> v)
+	{
+		m11 = v.x;
+		m12 = v.y;
+		m13 = v.z;
+		m14 = v.w;
 	}
 	Matrix1x4(T _m11, T _m12, T _m21, T _m22)
 		: m11(_m11), m12(_m12), m13(_m21), m14(_m22)
@@ -292,6 +311,7 @@ public:
 	{
 		return Vector2(x * scalar, y * scalar);
 	}
+
 	friend Vector2<T> operator*(T scalar, Vector2<T> vector)
 	{
 		return Vector2(vector.x * scalar, vector.y * scalar);
@@ -372,6 +392,13 @@ public:
 	{
 		return Vector3(x * scalar, y * scalar, z * scalar);
 	}
+	//Vector3 (Matrix1x4 m) : x(m.m11), y(m.m12), z(m.13)
+	//{
+	//}
+	//Vector3<T>(Matrix1x4 m) : x(m.m11),y(m.m12),z(m.13)
+	//{
+
+	//}
 	// Different Multiplication by Scalar (commutative property)
 	friend Vector3<T> operator*(T scalar, Vector3<T> vector)
 	{
@@ -382,6 +409,13 @@ public:
 	{
 		return Vector3(x * vector.x, y * vector.y, z * vector.z);
 	}
+
+	// ²æ³Ë
+	Vector3 operator^(const Vector3& vector) const
+	{		
+		return Vector3((y * vector.z) - (z * vector.y), (z * vector.x) - (x * vector.z), (x * vector.y) - (y * vector.x));
+	}
+	
 	// Vector Multiplication by Matrix3x3
 	Vector3 operator*(const Matrix3x3<T>& matrix)
 	{
@@ -609,7 +643,11 @@ Matrix3x3<T> CreateIdentityMatrix3x3()
 template<typename T>
 Matrix4x4<T> CreateIdentityMatrix4x4()
 {
-	return Matrix4x4<T>(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+	return Matrix4x4<T>(
+		1.0f, 0.0f, 0.0f, 0.0f, 
+		0.0f, 1.0f, 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f, 
+		0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 // Consider counterclockwise rotation positive and clockwise rotation negative.
