@@ -17,7 +17,8 @@ Model *model = NULL;
 const int width  = 800;
 const int height = 800;
 const int depth = 255;
-Vec3f camera(0, 0, 3);
+Vec3f eye(-1, -1, -3);
+Vec3f center(0, 0, 0);
 TGAImage zbuffer(width, height, TGAImage::GRAYSCALE); // Zbuffer改成图片存放
 
 Vec3f light_dir(0,0,-1);
@@ -84,10 +85,49 @@ Matrix4x4<float> viewport(int x,int y,int w, int h)
 	return m;
 }
 
-// projection 
+// zaxis = normal(cameraTarget - cameraPosition)
+// xaxis = normal(cross(cameraUpVector, zaxis))
+// yaxis = cross(zaxis, xaxis)
+
+//  xaxis.x           yaxis.x           zaxis.x          0
+//  xaxis.y           yaxis.y           zaxis.y          0
+//  xaxis.z           yaxis.z           zaxis.z          0
+// -dot(xaxis, cameraPosition)  -dot(yaxis, cameraPosition)  -dot(zaxis, cameraPosition)  1
+
+ Matrix4x4<float> lookat(Vec3f cameraPosition, Vec3f cameraTarget, Vec3f up) {
+	Vec3f z = (cameraTarget-cameraPosition).normalize();
+	Vec3f x = (up^z).normalize();
+	Vec3f y = (z^x).normalize();	
+	Matrix4x4<float> res = CreateIdentityMatrix4x4<float>();
+	res.m11 = x.x;
+	res.m21 = x.y;
+	res.m31 = x.z;
+
+	res.m12 = y.x;
+	res.m22 = y.y;
+	res.m32 = y.z;
+
+	res.m13 = z.x;
+	res.m23 = z.y;
+	res.m33 = z.z;
+	
+	//res.m41 = -dotProduct(x, cameraPosition);
+	//res.m42 = -dotProduct(y, cameraPosition);
+	//res.m43 = -dotProduct(z, cameraPosition);
+
+	// 匹配投影矩阵
+	res.m41 = 0;
+	res.m42 = 0;
+	res.m43 = 0; 
+	
+	return res;
+}
+
+// 这里假设camera的Z方向平行world坐标系的Z方向，投影矫正简化版本
 Matrix4x4<float> projection()
 {
 	Matrix4x4<float> proj = CreateIdentityMatrix4x4<float>();
+	//proj.m34 = -1.f / (eye.z-center.z);
 	proj.m34 = -1.f / 3;
 	return proj;
 }
@@ -98,6 +138,7 @@ int main(int argc, char** argv) {
    
     TGAImage image(width, height, TGAImage::RGB);    
 
+	Matrix View = lookat(eye, center, Vec3f(0, 1, 0));
 	Matrix4x4<float> proj = projection();	
 	
 	Matrix4x4<float> ViewPort = viewport(width / 8, height / 8, width * 3 / 4, height * 3 / 4);
@@ -112,13 +153,20 @@ int main(int argc, char** argv) {
 		for (int j = 0; j < 3; j++) {
 			Vec3f v_point = model->vert(face[j]);			
 			Matrix1x4<float> v(v_point);
-			v = v * proj*ViewPort;// 假设相机和世界坐标和模型坐标中心重合， 只做透视投影和视口变换		
+			//v = v * proj*ViewPort;// 假设世界坐标和模型坐标中心重合，去掉世界坐标变换
+			//v = v * View;
+			v = v * View* proj*ViewPort;// 假设世界坐标和模型坐标中心重合，去掉世界坐标变换
+		/*	if (i >= 38)
+				std::cout << "i =" << i << " " << v.m14 << std::endl;*/
 			screen_coords[j] = Vec3i(v.m11 / v.m14, v.m12 / v.m14, v.m13 / v.m14);
+		
+			//screen_coords[j] = Vec3i(v.m11, v.m12 , v.m13 );
 						
 		
 			//world_coords[j] = v_point;
 			varying_uv[j] = model->uv(i, j);
 		}
+		//std::cout << " " << i << std::endl;
 		triangle(screen_coords, image, zbuffer, varying_uv);
 		/*Vec3f n = (world_coords[2] - world_coords[0]) ^ (world_coords[1] - world_coords[0]);
 		n = n.normalize();
@@ -133,6 +181,7 @@ int main(int argc, char** argv) {
 	image.write_tga_file("../../Output/MVPMatrix.tga");
 	zbuffer.flip_vertically(); 
 	zbuffer.write_tga_file("../../Output/zbufferTest.tga");
+	std::cout << "输出图片完成！" << std::endl;
     delete model;
     return 0;
 }
