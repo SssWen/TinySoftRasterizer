@@ -32,8 +32,8 @@ struct Shader {
 	Vec3i vertex(int iface, int nthvert) {		
 		// uv坐标在顶点着色器只进行保存
 		varying_uv[nthvert] = model->uv(iface, nthvert); 
-		Vec3f v = model->vert(iface, nthvert);		
-		Matrix1x4<float> pos(v);
+		Vec3f gl_Vertex = model->vert(iface, nthvert);		
+		Matrix1x4<float> pos(gl_Vertex);
 		// mvp * viewport 矩阵
 		pos = pos * View* proj*ViewPort; 
 		Vec3i gl_Position = Vec3i(pos.m11 / pos.m14, pos.m12 / pos.m14, pos.m13 / pos.m14);
