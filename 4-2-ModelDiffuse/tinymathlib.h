@@ -311,7 +311,10 @@ public:
 	{
 		return Vector2(x * scalar, y * scalar);
 	}
-
+	Vector2<T> operator*(float scalar)
+	{
+		return Vector2<T>(x * scalar, y * scalar);
+	}
 	friend Vector2<T> operator*(T scalar, Vector2<T> vector)
 	{
 		return Vector2(vector.x * scalar, vector.y * scalar);

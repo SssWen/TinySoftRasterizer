@@ -51,10 +51,7 @@ void triangle(Vec3i *pts, TGAImage &image,TGAImage &zbuffer,Vec2i *varying_uv) {
 			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z<0 || zbuffer.get(P.x, P.y)[0]>P.z) continue;
 			
 			// UV½øÐÐ²åÖµ
-			//Vec2i uv = varying_uv[0] * bc_screen.x + varying_uv[1] * bc_screen.y + varying_uv[2] * bc_screen.z;			
-			Vec2i uv;
-			uv.x = varying_uv[0].x * bc_screen.x+ varying_uv[1].x * bc_screen.y + varying_uv[2].x * bc_screen.z;
-			uv.y = varying_uv[0].y * bc_screen.x+ varying_uv[1].y * bc_screen.y + varying_uv[2].y * bc_screen.z;
+			Vec2i uv = varying_uv[0] * bc_screen.x + varying_uv[1] * bc_screen.y + varying_uv[2] * bc_screen.z;						
 			color = model->diffuse(uv); //*inty;
 			zbuffer.set(P.x, P.y, TGAColor(P.z));
 			image.set(P.x, P.y, color);
