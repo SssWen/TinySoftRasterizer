@@ -37,7 +37,6 @@ struct Shader {
 		// mvp * viewport 矩阵
 		pos = pos * View* proj*ViewPort; 
 		Vec3i gl_Position = Vec3i(pos.m11 / pos.m14, pos.m12 / pos.m14, pos.m13 / pos.m14);
-		// NDC 标准化之后 乘上视口变换 变成 范围[0,width/height]
 		return gl_Position;
 	}
 	/*
